@@ -1,0 +1,15 @@
+{
+  "extends": "rallycoding",
+  "rules": {
+      "arrow-body-style": 0,
+      "semi": 2
+    },
+    "parserOptions": {
+        "ecmaVersion": 5,
+        "sourceType": "module",
+        "ecmaFeatures": {
+            "jsx": true
+        }
+    },
+
+}

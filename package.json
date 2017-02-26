@@ -1,0 +1,43 @@
+{
+  "name": "thesis-server",
+  "version": "1.0.0",
+  "description": "Crustaceans thesis server",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha test/test-server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CruciferousCrustaceans/hrsf53-thesis.git"
+  },
+  "author": "Dan Svorcan, Jonathan Eleiott, Bill Lea",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/CruciferousCrustaceans/hrsf53-thesis/issues"
+  },
+  "homepage": "https://github.com/CruciferousCrustaceans/hrsf53-thesis#readme",
+  "dependencies": {
+    "aws-sdk": "^2.18.0",
+    "axios": "^0.15.3",
+    "bluebird": "^3.4.7",
+    "body-parser": "^1.16.1",
+    "bookshelf": "^0.10.3",
+    "chai": "^3.5.0",
+    "chai-http": "^3.0.0",
+    "eslint": "^3.15.0",
+    "eslint-config-rallycoding": "^3.2.0",
+    "express": "^4.14.1",
+    "express-promise-router": "^1.1.1",
+    "firebase": "^3.6.9",
+    "forever": "^0.15.3",
+    "google-cloud": "^0.47.0",
+    "knex": "^0.12.7",
+    "mocha": "^3.2.0",
+    "mysql": "^2.13.0",
+    "q": "^1.4.1",
+    "request": "^2.79.0"
+  },
+  "devDependencies": {
+    "nodemon": "^1.11.0"
+  }
+}
