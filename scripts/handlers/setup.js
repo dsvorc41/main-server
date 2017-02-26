@@ -18,6 +18,14 @@ const Item = bookshelf.Model.extend({
     }
 });
 
+const List = bookshelf.Model.extend({
+  tableName: 'lists',
+  hasTimestamps: true,
+  items: function () {
+    return this.hasMany(Item);
+  }
+});
+
 module.exports = {
   create: (req, res) => { 
     console.log(`Serving ${req.method} request for ${req.url} (requestHandlerAPI.create)`);
