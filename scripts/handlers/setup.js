@@ -1,24 +1,14 @@
 const knex = require('knex')({
   client: 'mysql',
   connection: {
-    host: '127.0.0.1',
+    host: 'localhost',
     user: 'root',
-    password: '',
-    database: 'thesis',
+    password: 'MyNewPass',  // set a password if needed
+    database: 'thesis',  // Be sure to create DB on server
     charset: 'utf8'
   }
 });
-
 const bookshelf = require('bookshelf')(knex);
-
-// Our Models
-const List = bookshelf.Model.extend({
-  tableName: 'lists',
-  hasTimestamps: true,
-  items: function () {
-    return this.hasMany(Item);
-  }
-});
 
 const Item = bookshelf.Model.extend({
   tableName: 'items',
@@ -41,6 +31,8 @@ module.exports = {
             table.increments().primary();
             table.string('name');
             table.string('description');
+            table.string('image');
+            table.boolean('complete').defaultTo(false);
             table.timestamps();
             table.integer('list_id').unsigned().references('lists.id');
         })
