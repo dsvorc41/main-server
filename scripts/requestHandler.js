@@ -101,7 +101,7 @@ module.exports = {
 
     axios({
         method: 'post',
-        url: 'http://localhost:8084/setImage',
+        url: 'http://54.202.3.62:8084/setImage',
         data: { imageBuffer: imageData }
       })
       .then((response) => {
