@@ -175,12 +175,13 @@ module.exports = {
 
     console.log('BODY', req.body.item);
 
+    const complete = req.body.complete;
 
     const itemId = req.body.item.id;
     const listId = req.body.item.list_id;
     console.log('ID ON SERVER', itemId);
     new Item({ id: itemId })
-      .save({ complete: 1 }, { patch: true })
+      .save({ complete: complete }, { patch: true })
       .then(() => {
             console.log('Item Deleted:', itemId);
 
