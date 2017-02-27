@@ -122,7 +122,7 @@ module.exports = {
 
     axios({
         method: 'post',
-        url: 'http://localhost:8084/compareImage',
+        url: 'http://54.202.3.62:8084/compareImage',
         data: { imageBuffer: imageData, referenceImageId: req.body.referenceImageId }
       })
       .then((response) => {
