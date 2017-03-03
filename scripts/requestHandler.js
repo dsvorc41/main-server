@@ -101,11 +101,16 @@ module.exports = {
     console.log(`Serving ${req.method} request for ${req.url} (inside requestHandler.postImage)`);
     // const randomImageName = `${Math.random()}.jpg`;
     const imageData = new Buffer(req.body.imageBuffer, 'base64');
+    const { targetImageLatitude, targetImageLongitude } = req.body;
 
     axios({
         method: 'post',
         url: 'http://54.202.3.62:8084/setImage',
-        data: { imageBuffer: imageData }
+        data: { 
+          imageBuffer: imageData,
+          targetImageLatitude,
+          targetImageLongitude
+        }
       })
       .then((response) => {
         console.log('image successfuly posted', response.data);
