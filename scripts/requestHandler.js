@@ -122,7 +122,7 @@ module.exports = {
     console.log(`Serving ${req.method} request for ${req.url} (inside requestHandler.compareImage)`);
     // const randomImageName = `${Math.random()}.jpg`;
     const imageData = new Buffer(req.body.imageBuffer, 'base64');
-    const { comparisonImageLatitude, comparisonImageLongitude } = req.body;
+    const { userImageLatitude, userImageLongitude } = req.body;
 
     axios({
         method: 'post',
@@ -130,8 +130,8 @@ module.exports = {
         data: { 
           imageBuffer: imageData, 
           referenceImageId: req.body.referenceImageId,
-          comparisonImageLatitude,
-          comparisonImageLongitude
+          userImageLatitude,
+          userImageLongitude
         }
       })
       .then((response) => {
