@@ -135,11 +135,11 @@ module.exports = {
         }
       })
       .then((response) => {
-        console.log('image successfuly posted', response);
+        console.log('image successfuly COMPARED');
         sendResponse(res, 201, headers, response.data);
       })
       .catch((error) => {
-        console.log('AXIOS ERROR', error);
+        console.log('IMAGE NOT COMPARED AXIOS ERROR', error);
         sendResponse(res, 404, '', 'Error');
       });
   },
