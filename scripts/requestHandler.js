@@ -3,6 +3,7 @@ const AWS = require('aws-sdk');
 const axios = require('axios');
 const firebase = require('./firebaseConfig');
 const headers = require('./headers');
+const requestHandlerAPI = require('./handlers/api');
 
 AWS.config.loadFromPath('../awsConfig.json');
 //import { headers, firebase } from './config';
@@ -10,38 +11,38 @@ AWS.config.loadFromPath('../awsConfig.json');
 const vision = gcloud.vision({
   projectId: 'thesis-de1f8',
   keyFilename: '../../keys/Thesis-b9fb73d56c41.json'
-}); 
-const s3 = new AWS.S3();
+});
+// const s3 = new AWS.S3();
 
 const sendResponse = function (res, statusCode, headersSent, responseMessage) {
-  console.log(responseMessage);
+  //console.log(responseMessage);
   res.writeHead(statusCode, headersSent);
   res.end(responseMessage);
 };
 
 module.exports = {
-  landing: (req, res) => { 
+  landing: (req, res) => {
     console.log(`Serving ${req.method} request for ${req.url} (inside requestHandler.landing)`);
     sendResponse(res, 200, headers, 'Welcome the server for Crustaceans thesis project!');
   },
 
   login: (req, res) => {
     console.log(`Serving ${req.method} request for ${req.url} (inside requestHandler.login)`);
-    console.log('email:', req.body.email, 'pass: ', req.body.password, typeof req.body.email);
     firebase.auth().signInWithEmailAndPassword(req.body.email, req.body.password)
       .then((user) => {
-        console.log('success login: ', user.email);
-        sendResponse(res, 201, headers, JSON.stringify(user));
+        requestHandlerAPI.getUserId(user, (obj) => {
+          sendResponse(res, 201, headers, JSON.stringify(obj));
+        });
       })
       .catch((error) => {
         console.log('error login: ', error);
-        sendResponse(res, 401, '', JSON.stringify(error));
+        sendResponse(res, 401, headers, JSON.stringify(error));
       });
   },
 
   logout: (req, res) => {
     console.log(`Serving ${req.method} request for ${req.url} (inside requestHandler.logout)`);
-    firebase.auth().signOut().then(() => {  
+    firebase.auth().signOut().then(() => {
       console.log('success logout!');
       sendResponse(res, 201, headers, 'Sign-out successful!');
     }, (error) => {
@@ -67,11 +68,12 @@ module.exports = {
     firebase.auth().createUserWithEmailAndPassword(req.body.email, req.body.password)
       .then((user) => {
         console.log('success createUser: ', user.email);
+        requestHandlerAPI.usersCreate(user);
         sendResponse(res, 201, headers, JSON.stringify(user));
       })
       .catch((error) => {
         console.log('error createUser: ', error);
-        sendResponse(res, 400, '', JSON.stringify(error));
+        sendResponse(res, 203, headers, JSON.stringify(error));
       });
   },
 
@@ -79,6 +81,7 @@ module.exports = {
     console.log(`Serving ${req.method} request for ${req.url} (inside requestHandler.deleteUser)`);
     const user = firebase.auth().currentUser;
     if (user) {
+      requestHandlerAPI.usersDelete(user);
       user.delete()
         .then((success) => {
           console.log('success deleteUser: ', success);
@@ -92,11 +95,11 @@ module.exports = {
         sendResponse(res, 401, '', 'User not logged in, or doesn\'t exist!');
       }
   },
-  
+
   postImage: (req, res) => {
     //http://localhost:8084/imageMockRoute
     console.log(`Serving ${req.method} request for ${req.url} (inside requestHandler.postImage)`);
-    const randomImageName = `${Math.random()}.jpg`;
+    // const randomImageName = `${Math.random()}.jpg`;
     const imageData = new Buffer(req.body.imageBuffer, 'base64');
 
     axios({
@@ -111,13 +114,13 @@ module.exports = {
       .catch((error) => {
         console.log('AXIOS ERROR', error);
         sendResponse(res, 404, '', 'Error');
-      });  
+      });
   },
 
   compareImage: (req, res) => {
     //http://localhost:8084/imageMockRoute
     console.log(`Serving ${req.method} request for ${req.url} (inside requestHandler.compareImage)`);
-    const randomImageName = `${Math.random()}.jpg`;
+    // const randomImageName = `${Math.random()}.jpg`;
     const imageData = new Buffer(req.body.imageBuffer, 'base64');
 
     axios({
@@ -126,13 +129,13 @@ module.exports = {
         data: { imageBuffer: imageData, referenceImageId: req.body.referenceImageId }
       })
       .then((response) => {
-        console.log('image successfuly posted', response.data);
+        console.log('image successfuly posted', response);
         sendResponse(res, 201, headers, response.data);
       })
       .catch((error) => {
-        console.log('AXIOS ERROR');
+        console.log('AXIOS ERROR', error);
         sendResponse(res, 404, '', 'Error');
-      });  
+      });
   },
   gVision: (req, res) => {
     console.log(`Serving ${req.method} request for ${req.url} (inside requestHandler.gVision)`);

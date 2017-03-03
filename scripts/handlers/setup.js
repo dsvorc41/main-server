@@ -1,57 +1,73 @@
-const knex = require('knex')({
-  client: 'mysql',
-  connection: {
-    host: 'localhost',
-    user: 'root',
-    password: 'MyNewPass',  // set a password if needed
-    database: 'thesis',  // Be sure to create DB on server
-    charset: 'utf8'
-  }
-});
-const bookshelf = require('bookshelf')(knex);
-
-const Item = bookshelf.Model.extend({
-  tableName: 'items',
-  hasTimestamps: true,
-  list: function () {
-      return this.belongsTo(List);
-    }
-});
-
-const List = bookshelf.Model.extend({
-  tableName: 'lists',
-  hasTimestamps: true,
-  items: function () {
-    return this.hasMany(Item);
-  }
-});
+const knex = require('../db').knex;
+const { User, List, Item } = require('../models');
 
 module.exports = {
-  create: (req, res) => { 
+  create: (req, res) => {
     console.log(`Serving ${req.method} request for ${req.url} (requestHandlerAPI.create)`);
-    knex.schema.createTable('lists', (table) => {  
-        table.increments().primary();
-        table.string('name');
-        table.string('description');
-        table.timestamps();
+    knex.schema
+    // .dropTable('users_lists')
+    // .dropTable('users_items')
+    // .dropTable('items')
+    // .dropTable('lists')
+    // .dropTable('users')
+    .createTable('users', (table) => {
+      table.increments().primary();
+      table.string('firebase_id').unique();
+      table.string('email');
+      table.string('name');
+      table.timestamps();
     })
-    .createTable('items', (table) => {  
-            table.increments().primary();
-            table.string('name');
-            table.string('description');
-            table.string('image');
-            table.boolean('complete').defaultTo(false);
-            table.timestamps();
-            table.integer('list_id').unsigned().references('lists.id');
-        })
+    .createTable('lists', (table) => {
+      table.increments().primary();
+      table.string('name');
+      table.string('description');
+      table.boolean('public').defaultTo(true);
+      table.integer('user_id').unsigned().references('users.id');
+      table.timestamps();
+    })
+    .createTable('items', (table) => {
+      table.increments().primary();
+      table.string('name');
+      table.string('description');
+      table.string('image');
+      table.decimal('lat');
+      table.decimal('long');
+      table.integer('radius');
+      table.integer('list_id').unsigned().references('lists.id');
+      table.timestamps();
+    })
+    // Completed
+    .createTable('users_items', (table) => {
+      table.increments().primary();
+      table.integer('user_id').unsigned().references('users.id');
+      table.integer('item_id').unsigned().references('items.id');
+      table.timestamps();
+    })
+    // Subscriptions 
+    .createTable('users_lists', (table) => {
+      table.increments().primary();
+      table.integer('user_id').unsigned().references('users.id');
+      table.integer('list_id').unsigned().references('lists.id');
+      table.timestamps();
+    })
 
-    //////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////
     // POPULATE LIST
-    //////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////
     .then(() => {
-      return new List({ 
-        name: 'Bills SF Spots', 
-        description: 'Find these hidden spots in the city!!'
+      return new User({
+        name: 'John@aol.com',
+        firebase_id: 'te3FEQNQwighVFmSDzonY01a1ug2'
+      })
+      .save().then((model) => {
+        return model.get('id');
+      });
+    })
+    .then((userId) => {
+      return new List({
+        name: 'SF HotSpots',
+        description: 'Find these hidden spots in the city!!',
+        user_id: userId
       })
       .save().then((model) => {
         return model.get('id');
@@ -59,20 +75,20 @@ module.exports = {
     })
     .then((listId) => {
       console.log('model: ', listId);
-      return new Item({ 
-        name: 'Golden Gate Bridge', 
-        description: 'Most famous bridge on the planet.', 
-        list_id: listId 
+      return new Item({
+        name: 'Golden Gate Bridge',
+        description: 'Most famous bridge on the planet.',
+        list_id: listId
       }).save().then((model) => {
         return model.get('list_id');
       });
     })
     .then((listId) => {
       console.log('model: ', listId);
-      return new Item({ 
-        name: 'Coit Tower', 
-        description: 'A 210-foot (64 m) tower in the Telegraph Hill neighborhood.', 
-        list_id: listId 
+      return new Item({
+        name: 'Coit Tower',
+        description: 'A 210-foot (64 m) tower in the Telegraph Hill neighborhood.',
+        list_id: listId
       })
       .save().then((model) => {
         return model.get('list_id');
@@ -80,74 +96,36 @@ module.exports = {
     })
     .then((listId) => {
       console.log('model: ', listId);
-      return new Item({ 
-        name: 'Willie Mays Statue', 
-        description: 'Youll find this one near McCovey Cove.', 
-        list_id: listId 
+      return new Item({
+        name: 'Willie Mays Statue',
+        description: 'Youll find this one near McCovey Cove.',
+        list_id: listId
       })
       .save().then((model) => {
         return model.get('list_id');
       });
     })
-    //////////////////////////////////////////////////////////
-    // END POPULATE LIST
-    //////////////////////////////////////////////////////////
-    
-    //////////////////////////////////////////////////////////
-    // POPULATE LIST
-    //////////////////////////////////////////////////////////
-    .then(() => {
-      return new List({ 
-        name: 'Jons Treats', 
-        description: 'Can you find each treat?'
-      })
-      .save().then((model) => {
-        return model.get('id');
-      });
-    })
-    .then((listId) => {
-      console.log('model: ', listId);
-      return new Item({ 
-        name: 'Red Bull', 
-        description: 'Gives you wings.', 
-        list_id: listId 
-      }).save().then((model) => {
-        return model.get('list_id');
-      });
-    })
-    .then((listId) => {
-      console.log('model: ', listId);
-      return new Item({ 
-        name: 'Gummi Bears', 
-        description: 'If any are left.', 
-        list_id: listId 
-      })
-      .save().then((model) => {
-        return model.get('list_id');
-      });
-    })
-    .then((listId) => {
-      console.log('model: ', listId);
-      return new Item({ 
-        name: 'Monster Energy Drink', 
-        description: 'When Red Bull is not enough.', 
-        list_id: listId 
-      })
-      .save().then((model) => {
-        return model.get('list_id');
-      });
-    })
-    //////////////////////////////////////////////////////////
-    // END POPULATE LIST
-    //////////////////////////////////////////////////////////
+    // //////////////////////////////////////////////////////////
+    // // END POPULATE LIST
+    // //////////////////////////////////////////////////////////
 
-    //////////////////////////////////////////////////////////
-    // POPULATE LIST
-    //////////////////////////////////////////////////////////
+    // //////////////////////////////////////////////////////////
+    // // POPULATE LIST
+    // //////////////////////////////////////////////////////////
     .then(() => {
-      return new List({ 
-        name: 'Dan\'s Favorites', 
-        description: 'Locate them all!'
+      return new User({
+        name: 'JR',
+        firebase_id: 'V0ZWGwYw6qbn1gprp2DpksThLU32'
+      })
+      .save().then((model) => {
+        return model.get('id');
+      });
+    })
+    .then((userId) => {
+      return new List({
+        name: 'Jon\'s Red Bull Hit List',
+        description: 'It gives you wings',
+        user_id: userId
       })
       .save().then((model) => {
         return model.get('id');
@@ -155,39 +133,28 @@ module.exports = {
     })
     .then((listId) => {
       console.log('model: ', listId);
-      return new Item({ 
-        name: 'Daughter\'s Day Care', 
-        description: 'Be aware ... they may have moved.', 
-        list_id: listId 
+      return new Item({
+        name: 'Walgreens',
+        description: 'Most convenient to HR.',
+        list_id: listId
       }).save().then((model) => {
         return model.get('list_id');
       });
     })
     .then((listId) => {
       console.log('model: ', listId);
-      return new Item({ 
-        name: 'Hack Reactor', 
-        description: 'Find the logo at the top of the stairs on 8th floor.', 
-        list_id: listId 
+      return new Item({
+        name: 'Costco',
+        description: 'Load up on bulk Red Bull.',
+        list_id: listId
       })
       .save().then((model) => {
         return model.get('list_id');
       });
     })
-    .then((listId) => {
-      console.log('model: ', listId);
-      return new Item({ 
-        name: 'Park Bench', 
-        description: 'Dan loves this spot.', 
-        list_id: listId 
-      })
-      .save().then((model) => {
-        return model.get('list_id');
-      });
-    })
-    //////////////////////////////////////////////////////////
-    // END POPULATE LIST
-    //////////////////////////////////////////////////////////
+    // //////////////////////////////////////////////////////////
+    // // END POPULATE LIST
+    // //////////////////////////////////////////////////////////
 
     .then((resp) => {
       console.log('RESp', resp);
@@ -197,12 +164,11 @@ module.exports = {
       console.log('ERROR:', err);
       res.send(err);
     });
-    //res.send('DB Created');
-  }, 
+  },
   delete: (req, res) => {
     knex.schema.dropTable('items')
-        .dropTable('lists').then(() => {
-          res.send('DB Cleared');
-        });
+      .dropTable('lists').then(() => {
+        res.send('DB Cleared');
+      });
   }
 };

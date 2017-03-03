@@ -1,23 +1,53 @@
 const headers = require('../headers');
+//const bookshelf = require('../bookshelf');
+const { User, List, Item } = require('../models');
+//const Done = require('../models').Done;
 
-const bookshelf = require('../bookshelf');
+// // Our Models
+// const User = bookshelf.Model.extend({
+//   tableName: 'users',
+//   hasTimestamps: true,
+//   lists: function () {
+//     return this.hasMany(List);
+//   },
+//   // items: function () {
+//   //   return this.hasMany(Item);
+//   // },
+// });
 
-// Our Models
-const List = bookshelf.Model.extend({
-  tableName: 'lists',
-  hasTimestamps: true,
-  items: function () {
-    return this.hasMany(Item);
-  }
-});
+// const List = bookshelf.Model.extend({
+//   tableName: 'lists',
+//   hasTimestamps: true,
+//   items: function () {
+//     return this.hasMany(Item);
+//   },
+//   user: function () {
+//     return this.belongsTo(User);
+//   }
+// });
 
-const Item = bookshelf.Model.extend({
-  tableName: 'items',
-  hasTimestamps: true,
-  list: function () {
-      return this.belongsTo(List);
-    }
-});
+// const Item = bookshelf.Model.extend({
+//   tableName: 'items',
+//   hasTimestamps: true,
+//   list: function () {
+//     return this.belongsTo(List);
+//   },
+//   done: function () {
+//     return this.hasOne(Done);
+//   }
+//   // users: function() {
+//   //   return this.belongsToMany(User);
+//   // }
+// });
+
+// const Done = bookshelf.Model.extend({
+//   tableName: 'users_items',
+//   hasTimestamps: true,
+//   item: function () {
+//     return this.belongsTo(Item);
+//   },
+// });
+
 
 const sendResponse = (res, statusCode, responseHeaders, responseMessage) => {
   res.writeHead(statusCode, responseHeaders);
@@ -42,8 +72,76 @@ module.exports = {
             res.send('An error occured');
           });
   },
+  // Return ALL lists for user
+  getUserId: (user, callback) => { 
+    console.log('Serving internal request for (handlers/api.getUserId)');
+
+    new User({ firebase_id: user.uid })
+      .fetch()
+      .then((model) => {
+        const userId = model.get('id');
+        const obj = {
+          user_id: userId, 
+          fb: user
+        };
+        callback(obj);
+      })
+      .catch((error) => {
+            console.log('ERROR:', error);
+          });
+  },
+  // Return ALL lists for user
+  listsUser: (req, res) => { 
+    console.log(`Serving ${req.method} request for ${req.url} (handlers/api.listsUser)`);
+
+    const userId = req.params.userId;
+    console.log('userId', userId);
+
+    new User()
+      .where('id', userId)
+      .fetch({ withRelated: ['lists.items', {
+        'lists.items.done': function (qb) { 
+          qb.innerJoin('users', 'users_items.user_id', 'users.id');
+          qb.where('users.id', userId); 
+        }
+        }] })
+      .then((user) => {
+            const output = user.toJSON();
+            res.send(output.lists);
+          })
+      .catch((error) => {
+            console.log(error);
+            res.send('An error occured');
+          });
+  },
   // DELETE a List
   listsDelete: (req, res) => { 
+    console.log(`Serving ${req.method} request for ${req.url} (handlers/api.listsDelete)`);
+
+    const listId = req.params.list_id;
+    console.log('this.all', module.exports.all);
+    new List({ id: listId })
+      .save({ user_id: 1 }, { patch: true })
+      .then((model) => {
+            console.log('List Items Deleted:', model);
+
+            //this.all(req, res);
+            new List()
+              .fetchAll({ withRelated: ['items'] })
+              .then((lists) => { 
+                    res.send(lists.toJSON());
+                  }).catch((error) => {
+                    console.log(error);
+                    res.send('An error occured');
+                  });
+          })
+      .catch((error) => {
+            console.log(error);
+            res.send('An error occured');
+          });
+  },
+  // DELETE a List
+  listsDelete2: (req, res) => { 
     console.log(`Serving ${req.method} request for ${req.url} (handlers/api.listsDelete)`);
 
     const listId = req.params.list_id;
@@ -72,21 +170,54 @@ module.exports = {
             res.send('An error occured');
           });
   },
+  // Create Users -- from requestHandler
+  usersCreate: (user) => { 
+    console.log('Serving direct request for (handlers/api.usersCreate)');
+
+    //console.log('user:', user);
+    //const newName = req.body.listName ? req.body.listName : 'Hello Jon.';
+
+    new User(
+      {
+        email: user.email,
+        firebase_id: user.uid,
+      })
+      .save()
+      .then(() => {
+        console.log('New User Created in DB:');
+        return;
+      });
+  },
+
+  // Create Users -- from requestHandler
+  usersDelete: (user) => { 
+    console.log('Serving direct request for (handlers/api.usersDelete)', user.uid);
+
+    new User()
+      .where('firebase_id', user.uid)
+      .destroy()
+      .then(() => {
+        console.log('User Deleted from Local DB');
+        return;
+      });
+  },
+
   // Create New list
   listsCreate: (req, res) => { 
     console.log(`Serving ${req.method} request for ${req.url} (handlers/api.listsCreate)`);
 
-    console.log('body.listName:', req.body);
     const newName = req.body.listName ? req.body.listName : 'Hello Jon.';
+    const userId = parseInt(req.body.user, 10);
 
     new List(
       {
         name: newName,
-        description: null
+        description: null,
+        user_id: userId
       })
       .save()
       .then((model) => {
-        console.log('model:', model);
+        //console.log('model:', model);
         return model.get('id');
       })
       .then((listId) => {
@@ -116,9 +247,6 @@ module.exports = {
   itemsCreate: (req, res) => { 
     console.log(`Serving ${req.method} request for ${req.url} (handlers/api.itemsCreate)`);
 
-    console.log('body:', req.body);
-    //const newName = req.body.listName ? req.body.listName : 'Hello Jon.';
-
     new Item(
       {
         name: req.body.name,
@@ -128,7 +256,6 @@ module.exports = {
       })
       .save()
       .then((model) => {
-        console.log('model:', model);
         return model.get('id');
       })
       .then(() => {
@@ -172,16 +299,11 @@ module.exports = {
   },
   itemsFound: (req, res) => { 
     console.log(`Serving ${req.method} request for ${req.url} (handlers/api.itemsFound)`);
-
-    console.log('BODY', req.body.item);
-
-    const complete = req.body.complete;
-
     const itemId = req.body.item.id;
     const listId = req.body.item.list_id;
-    console.log('ID ON SERVER', itemId);
+
     new Item({ id: itemId })
-      .save({ complete: complete }, { patch: true })
+      .save({ complete: 1 }, { patch: true })
       .then(() => {
             console.log('Item Deleted:', itemId);
 
