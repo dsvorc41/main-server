@@ -50,10 +50,6 @@ app.get('/checkUserCredentials', (req, res) => {
 //////// IMAGE ROUTES ////////////////////////
 //////////////////////////////////////////////
 
-app.get('/vision', (req, res) => {
-  requestHandler.gVision(req, res);
-});
-
 app.post('/postImage', (req, res) => {
   requestHandler.postImage(req, res);
 });
