@@ -114,7 +114,6 @@ module.exports = {
         }
       })
       .then((response) => {
-        console.log('image successfuly posted', response.data);
         sendResponse(res, 201, headers, response.data);
       })
       .catch((error) => {
@@ -129,7 +128,6 @@ module.exports = {
     // const randomImageName = `${Math.random()}.jpg`;
     const imageData = new Buffer(req.body.imageBuffer, 'base64');
     const { userImageLatitude, userImageLongitude } = req.body;
-    console.log('USER COORDS FROM COMPARE IMAGE: ', userImageLatitude, userImageLongitude);
     axios({
         method: 'post',
         url: 'http://54.202.3.62:8084/compareImage',
@@ -141,7 +139,6 @@ module.exports = {
         }
       })
       .then((response) => {
-        console.log('image successfuly COMPARED');
         sendResponse(res, 201, headers, response.data);
       })
       .catch((error) => {
