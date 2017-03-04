@@ -101,7 +101,7 @@ module.exports = {
     console.log(`Serving ${req.method} request for ${req.url} (inside requestHandler.postImage)`);
     // const randomImageName = `${Math.random()}.jpg`;
     const imageData = new Buffer(req.body.imageBuffer, 'base64');
-    const { targetImageLatitude, targetImageLongitude } = req.body;
+    const { targetImageLatitude, targetImageLongitude, targetImageAllowedDistance } = req.body;
 
     axios({
         method: 'post',
@@ -109,7 +109,8 @@ module.exports = {
         data: { 
           imageBuffer: imageData,
           targetImageLatitude,
-          targetImageLongitude
+          targetImageLongitude, 
+          targetImageAllowedDistance
         }
       })
       .then((response) => {
@@ -128,7 +129,7 @@ module.exports = {
     // const randomImageName = `${Math.random()}.jpg`;
     const imageData = new Buffer(req.body.imageBuffer, 'base64');
     const { userImageLatitude, userImageLongitude } = req.body;
-
+    console.log('USER COORDS FROM COMPARE IMAGE: ', userImageLatitude, userImageLongitude);
     axios({
         method: 'post',
         url: 'http://54.202.3.62:8084/compareImage',
