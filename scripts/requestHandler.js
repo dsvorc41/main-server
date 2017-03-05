@@ -8,8 +8,8 @@ const requestHandlerAPI = require('./handlers/api');
 AWS.config.loadFromPath('../awsConfig.json');
 //import { headers, firebase } from './config';
 
-// const imageServerUrl = 'http://54.202.3.62:8084';
-const imageServerUrl = 'http://localhost:8084';
+const imageServerUrl = 'http://54.202.3.62:8084';
+// const imageServerUrl = 'http://localhost:8084';
 
 // const vision = gcloud.vision({
 //   projectId: 'thesis-de1f8',
