@@ -120,7 +120,7 @@ module.exports = {
         sendResponse(res, 201, headers, response.data);
       })
       .catch((error) => {
-        console.log('AXIOS ERROR', error);
+        console.log('AXIOS ERROR');
         sendResponse(res, 404, '', 'Error');
       });
   },
@@ -141,6 +141,7 @@ module.exports = {
         }
       })
       .then((response) => {
+        console.log(response)
         sendResponse(res, 201, headers, response.data);
       })
       .catch((error) => {
