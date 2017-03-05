@@ -8,10 +8,13 @@ const requestHandlerAPI = require('./handlers/api');
 AWS.config.loadFromPath('../awsConfig.json');
 //import { headers, firebase } from './config';
 
-const vision = gcloud.vision({
-  projectId: 'thesis-de1f8',
-  keyFilename: '../../keys/Thesis-b9fb73d56c41.json'
-});
+// const imageServerUrl = 'http://54.202.3.62:8084';
+const imageServerUrl = 'http://localhost:8084';
+
+// const vision = gcloud.vision({
+//   projectId: 'thesis-de1f8',
+//   keyFilename: '../../keys/Thesis-b9fb73d56c41.json'
+// });
 // const s3 = new AWS.S3();
 
 const sendResponse = function (res, statusCode, headersSent, responseMessage) {
@@ -105,12 +108,36 @@ module.exports = {
 
     axios({
         method: 'post',
-        url: 'http://54.202.3.62:8084/setImage',
+        url: `${imageServerUrl}/setImage`,
         data: { 
           imageBuffer: imageData,
           targetImageLatitude,
           targetImageLongitude, 
           targetImageAllowedDistance
+        }
+      })
+      .then((response) => {
+        sendResponse(res, 201, headers, response.data);
+      })
+      .catch((error) => {
+        console.log('AXIOS ERROR', error);
+        sendResponse(res, 404, '', 'Error');
+      });
+  },
+
+  postProfilePic: (req, res) => {
+    //http://localhost:8084/imageMockRoute
+    console.log(`Serving ${req.method} request for ${req.url} (inside requestHandler.postProfilePic)`);
+    // const randomImageName = `${Math.random()}.jpg`;
+    const imageData = new Buffer(req.body.imageBuffer, 'base64');
+    const { email } = req.body;
+
+    axios({
+        method: 'post',
+        url: `${imageServerUrl}/postProfilePic`,
+        data: { 
+          imageBuffer: imageData,
+          email
         }
       })
       .then((response) => {
@@ -130,7 +157,7 @@ module.exports = {
     const { userImageLatitude, userImageLongitude } = req.body;
     axios({
         method: 'post',
-        url: 'http://54.202.3.62:8084/compareImage',
+        url: `${imageServerUrl}/compareImage`,
         data: { 
           imageBuffer: imageData, 
           referenceImageId: req.body.referenceImageId,

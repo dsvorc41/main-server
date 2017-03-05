@@ -54,6 +54,10 @@ app.post('/postImage', (req, res) => {
   requestHandler.postImage(req, res);
 });
 
+app.post('/postProfilePic', (req, res) => {
+  requestHandler.postProfilePic(req, res);
+});
+
 app.post('/compareImage', (req, res) => {
   requestHandler.compareImage(req, res);
 });
