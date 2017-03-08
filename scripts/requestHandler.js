@@ -133,7 +133,7 @@ module.exports = {
         }
       })
       .then((response) => {
-        sendResponse(res, 201, headers, response.data);
+        sendResponse(res, 201, headers, JSON.stringify(response.data));
       })
       .catch((error) => {
         console.log('AXIOS ERROR');
