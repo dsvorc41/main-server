@@ -32,6 +32,7 @@ module.exports = {
       table.string('name');
       table.string('description');
       table.string('image');
+      table.string('imageURL');
       table.decimal('lat');
       table.decimal('long');
       table.integer('radius');
@@ -82,7 +83,8 @@ module.exports = {
       return new Item({
         name: 'Golden Gate Bridge',
         description: 'Most famous bridge on the planet.',
-        list_id: listId
+        list_id: listId,
+        imageURL: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/GoldenGateBridge-001.jpg/1920px-GoldenGateBridge-001.jpg'
       }).save().then((model) => {
         return model.get('list_id');
       });
@@ -92,7 +94,8 @@ module.exports = {
       return new Item({
         name: 'Coit Tower',
         description: 'A 210-foot (64 m) tower in the Telegraph Hill neighborhood.',
-        list_id: listId
+        list_id: listId,
+        imageURL: 'https://en.wikipedia.org/wiki/Coit_Tower#/media/File:CoitTowerLookingFromGreenwichAndTelegraphHillBlvd.jpg'
       })
       .save().then((model) => {
         return model.get('list_id');
@@ -103,7 +106,8 @@ module.exports = {
       return new Item({
         name: 'Willie Mays Statue',
         description: 'Youll find this one near McCovey Cove.',
-        list_id: listId
+        list_id: listId,
+        imageURL: 'https://igx.4sqi.net/img/general/width960/znNjyQV_c6Oi2KhNxwVh-7ucB9nX39AxLCWiAbOdlcs.jpg'
       })
       .save().then((model) => {
         return model.get('list_id');

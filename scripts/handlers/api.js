@@ -100,7 +100,7 @@ module.exports = {
   },
   
   // Create Users -- from requestHandler
-  usersCreate: (user) => { 
+  usersCreate: (user, callback) => { 
     console.log('Serving direct request for (handlers/api.usersCreate)');
 
     new User(
@@ -109,9 +109,24 @@ module.exports = {
         firebase_id: user.uid,
       })
       .save()
-      .then(() => {
-        console.log('New User Created in DB:');
-        return;
+      .then((model) => {
+        return new Subscription({
+          user_id: model.get('id'),
+          list_id: 1
+        })
+        .save()
+        .then(() => {
+          return model;
+        });
+      })
+      .then((model) => {
+        const userId = model.get('id');
+        const obj = {
+          user_id: userId, 
+          fb: user
+        };
+        console.log('New User Created ID:', obj.user_id);
+        callback(obj);
       });
   },
 
@@ -289,7 +304,8 @@ module.exports = {
         name: req.body.name,
         description: req.body.desc, 
         list_id: req.body.listId, 
-        image: req.body.image
+        image: req.body.image,
+        imageURL: req.body.imageURL,
       })
       .save()
       .then((model) => {

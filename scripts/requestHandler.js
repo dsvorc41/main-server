@@ -65,8 +65,9 @@ module.exports = {
     firebase.auth().createUserWithEmailAndPassword(req.body.email, req.body.password)
       .then((user) => {
         console.log('success createUser: ', user.email);
-        requestHandlerAPI.usersCreate(user);
-        sendResponse(res, 201, headers, JSON.stringify(user));
+        requestHandlerAPI.usersCreate(user, (obj) => {
+          sendResponse(res, 201, headers, JSON.stringify(obj));
+        });
       })
       .catch((error) => {
         console.log('error createUser: ', error);
