@@ -1,53 +1,6 @@
 const headers = require('../headers');
-//const bookshelf = require('../bookshelf');
-const { User, List, Item } = require('../models');
-//const Done = require('../models').Done;
-
-// // Our Models
-// const User = bookshelf.Model.extend({
-//   tableName: 'users',
-//   hasTimestamps: true,
-//   lists: function () {
-//     return this.hasMany(List);
-//   },
-//   // items: function () {
-//   //   return this.hasMany(Item);
-//   // },
-// });
-
-// const List = bookshelf.Model.extend({
-//   tableName: 'lists',
-//   hasTimestamps: true,
-//   items: function () {
-//     return this.hasMany(Item);
-//   },
-//   user: function () {
-//     return this.belongsTo(User);
-//   }
-// });
-
-// const Item = bookshelf.Model.extend({
-//   tableName: 'items',
-//   hasTimestamps: true,
-//   list: function () {
-//     return this.belongsTo(List);
-//   },
-//   done: function () {
-//     return this.hasOne(Done);
-//   }
-//   // users: function() {
-//   //   return this.belongsToMany(User);
-//   // }
-// });
-
-// const Done = bookshelf.Model.extend({
-//   tableName: 'users_items',
-//   hasTimestamps: true,
-//   item: function () {
-//     return this.belongsTo(Item);
-//   },
-// });
-
+const { User, List, Item, Subscription, Complete } = require('../models');
+const { changeSubscriberCount, getUserList } = require('./helpers');
 
 const sendResponse = (res, statusCode, responseHeaders, responseMessage) => {
   res.writeHead(statusCode, responseHeaders);
@@ -90,30 +43,35 @@ module.exports = {
             console.log('ERROR:', error);
           });
   },
+
+  // NEW ONE
   // Return ALL lists for user
+  //
   listsUser: (req, res) => { 
     console.log(`Serving ${req.method} request for ${req.url} (handlers/api.listsUser)`);
 
     const userId = req.params.userId;
-    console.log('userId', userId);
+    //const userId = 1;
 
     new User()
       .where('id', userId)
-      .fetch({ withRelated: ['lists.items', {
-        'lists.items.done': function (qb) { 
+      .fetch({ withRelated: ['subscriptions.list.items', {
+        'subscriptions.list.items.complete': function (qb) { 
           qb.innerJoin('users', 'users_items.user_id', 'users.id');
           qb.where('users.id', userId); 
         }
-        }] })
+        }] 
+      })
       .then((user) => {
             const output = user.toJSON();
-            res.send(output.lists);
+            res.send(output.subscriptions);
           })
       .catch((error) => {
-            console.log(error);
+            console.log('ERROR:', error);
             res.send('An error occured');
           });
   },
+
   // DELETE a List
   listsDelete: (req, res) => { 
     console.log(`Serving ${req.method} request for ${req.url} (handlers/api.listsDelete)`);
@@ -140,42 +98,10 @@ module.exports = {
             res.send('An error occured');
           });
   },
-  // DELETE a List
-  listsDelete2: (req, res) => { 
-    console.log(`Serving ${req.method} request for ${req.url} (handlers/api.listsDelete)`);
-
-    const listId = req.params.list_id;
-
-    new Item()
-      .where('list_id', listId)
-      .destroy()
-      .then((model) => {
-            console.log('List Items Deleted:', model);
-            new List({ id: listId })
-              .destroy()
-              .then(() => {
-                console.log('FULL LIST DELETED');
-                new List()
-                  .fetchAll({ withRelated: ['items'] })
-                  .then((lists) => { 
-                        res.send(lists.toJSON());
-                      }).catch((error) => {
-                        console.log(error);
-                        res.send('An error occured');
-                      });
-              });
-          })
-      .catch((error) => {
-            console.log(error);
-            res.send('An error occured');
-          });
-  },
+  
   // Create Users -- from requestHandler
   usersCreate: (user) => { 
     console.log('Serving direct request for (handlers/api.usersCreate)');
-
-    //console.log('user:', user);
-    //const newName = req.body.listName ? req.body.listName : 'Hello Jon.';
 
     new User(
       {
@@ -207,7 +133,7 @@ module.exports = {
     console.log(`Serving ${req.method} request for ${req.url} (handlers/api.listsCreate)`);
 
     const newName = req.body.listName ? req.body.listName : 'Hello Jon.';
-    const userId = parseInt(req.body.user, 10);
+    const userId = parseInt(req.body.userID, 10);
 
     new List(
       {
@@ -217,8 +143,19 @@ module.exports = {
       })
       .save()
       .then((model) => {
-        //console.log('model:', model);
-        return model.get('id');
+        const listId = model.get('id');
+        return new Subscription(
+          {
+            user_id: userId,
+            list_id: listId
+          })
+          .save()
+          .then((model2) => {
+            return model2.get('list_id');
+          });
+      })
+      .then((listId2) => {
+        return changeSubscriberCount(listId2, 1);
       })
       .then((listId) => {
         return new List({ id: listId })
@@ -231,6 +168,106 @@ module.exports = {
           });
       });
   },
+
+  // SUBSCRIBE USER TO LIST
+  subscribeUserToList: (req, res) => { 
+    console.log(`Serving ${req.method} request for ${req.url} (handlers/api.subscribeUserToList)`);
+
+    console.log('req.body', req.body);
+
+    const userId = parseInt(req.body.user, 10);
+    const listId = parseInt(req.body.list, 10);
+
+    new Subscription()
+      .where({
+        user_id: userId,
+        list_id: listId
+      })
+      .count()
+      .then((count) => {
+        if (count > 0) {
+          console.log('DUPLICATE SUBSCRIPTION');
+          return new List({ id: listId })
+            .fetch({ withRelated: ['items'] })
+            .then((list) => { 
+              res.send(list.toJSON());
+            }).catch((error) => {
+              console.log(error);
+              res.send('An error occured');
+            });
+        } 
+
+        new Subscription()
+          .save({
+            user_id: userId,
+            list_id: listId
+          })
+          .then((model) => {
+            return model.get('list_id');
+          })
+          .then(() => {
+            return changeSubscriberCount(listId, 1);
+          })
+          .then((listId1) => {
+            return new List({ id: listId1 })
+              .fetch({ withRelated: ['items'] })
+              .then((list) => { 
+                res.send(list.toJSON());
+              }).catch((error) => {
+                console.log(error);
+                res.send('An error occured');
+              });
+          })
+          .catch((error) => {
+            console.log(error);
+            res.send('An error occured');
+          });
+      })
+      .catch((error) => {
+        console.log(error);
+        res.send('An error occured');
+      });
+  },
+
+  // SUBSCRIBE USER TO LIST
+  unSubscribeUserFromList: (req, res) => { 
+    console.log(`Serving ${req.method} request for ${req.url} (handlers/api.unSubscribeUserFromList)`);
+
+    const userId = parseInt(req.params.user_id, 10);
+    const listId = parseInt(req.params.list_id, 10);
+
+    new Complete()
+      .where({ user_id: userId, list_id: listId })
+      .destroy()
+      .then(() => {
+        new Subscription()
+          .where({ user_id: userId, list_id: listId })
+          .destroy()
+          .then(() => {
+            return changeSubscriberCount(listId, -1);
+          })
+          .then(() => {
+            new User()
+              .where('id', userId)
+              .fetch({ withRelated: ['subscriptions.list.items', {
+                'subscriptions.list.items.complete': function (qb) { 
+                  qb.innerJoin('users', 'users_items.user_id', 'users.id');
+                  qb.where('users.id', userId); 
+                }
+                }
+                ] })
+              .then((user) => {
+                    const output = user.toJSON();
+                    res.send(output.subscriptions);
+                  })
+              .catch((error) => {
+                    console.log('ERROR:', error);
+                    res.send('An error occured');
+                  });
+          });
+      });
+  },
+
   // Return ALL items
   items: (req, res) => { 
     console.log(`Serving ${req.method} request for ${req.url} (handlers/api.items)`);
@@ -297,40 +334,132 @@ module.exports = {
             res.send('An error occured');
           });
   },
+
+  ////////////////////////////////////////////////////////////////
+  // REFACTOR TO USER SPECIFIC NEW WAY
+  ////////////////////////////////////////////////////////////////
+
+  // OLD GLOBAL WAY TO CHECK OFF ITEM
   itemsFound: (req, res) => { 
     console.log(`Serving ${req.method} request for ${req.url} (handlers/api.itemsFound)`);
+    
     const itemId = req.body.item.id;
     const listId = req.body.item.list_id;
+    const userId = req.body.user_id; // need to send this
+    const complete = req.body.complete;
+    // const complete = 1;
+    // const itemId = 3;
+    // const listId = 1;
+    // const userId = 2;
 
-    new Item({ id: itemId })
-      .save({ complete: 1 }, { patch: true })
-      .then(() => {
-            console.log('Item Deleted:', itemId);
+    console.log(`VARS: complete = ${complete}, itemId = ${itemId}, 
+      listId = ${listId}, userId = ${userId}`);
 
-            new List({ id: listId })
-              .fetch({ withRelated: ['items'] })
-              .then((list) => { 
-                res.send(list.toJSON());
-              }).catch((error) => {
-                console.log(error);
-                res.send('An error occured');
-              });
-          }).catch((error) => {
-            console.log(error);
-            res.send('An error occured');
-          })
-      .catch((error) => {
-            console.log(error);
-            res.send('An error occured');
-          });
+    if (complete === 0) {
+      console.log('Item NOT Deleted, no match:', itemId);
+      getUserList(userId, listId)
+        .then((list) => { 
+          res.send(list.toJSON());
+        });
+    } else {
+      new Complete()
+        .save({ user_id: userId, list_id: listId, item_id: itemId })
+        .then(() => {
+          console.log('Item Deleted:', itemId);
+          return getUserList(userId, listId);
+        })
+        .then((list) => { 
+          res.send(list.toJSON());
+        })
+        .catch((error) => {
+          console.log(error);
+          res.send('An error occured');
+        });
+    }
   },
   // Return ALL lists, with ALL related items nested
   all: (req, res) => { 
     console.log(`Serving ${req.method} request for ${req.url} (handlers/api.all)`);
     new List()
+    .orderBy('subscribers', 'DESC')
       .fetchAll({ withRelated: ['items'] })
       .then((lists) => { 
+            console.log('asdf', lists);
             res.send(lists.toJSON());
+          }).catch((error) => {
+            console.log(error);
+            res.send('An error occured22');
+          });
+  },
+
+  // Return ALL lists, with ALL related items nested
+  listStats: (req, res) => { 
+    console.log(`Serving ${req.method} request for ${req.url} (handlers/api.listStats)`);
+
+    const listId = req.params.list_id;
+
+    new List()
+      .where({ id: listId })
+      .fetchAll({ withRelated: ['completed.item'] })
+      .then((lists) => { 
+        res.send(lists.toJSON());
+      })
+      .catch((error) => {
+        console.log(error);
+        res.send('An error occured');
+      });
+  },
+
+  // Return ALL lists, with ALL related items nested
+  userStats: (req, res) => { 
+    console.log(`Serving ${req.method} request for ${req.url} (handlers/api.listStats)`);
+
+    const userId = req.params.user_id;
+    const output = {};
+
+    new List()
+      .where({ user_id: userId })
+      .count()
+      .then((count) => { 
+        output.listCount = count;
+      })
+      .then(() => {
+        return new Subscription()
+          .where({ user_id: userId })
+          .count()
+          .then((subscriptions) => {
+            output.subscriptionCount = subscriptions;
+            return;
+          });
+      })
+      .then(() => {
+        return new Complete()
+          .where({ user_id: userId })
+          .count()
+          .then((completes) => {
+            output.completeCount = completes;
+            return;
+          });
+      })
+      .then(() => {
+        res.send(JSON.stringify(output));
+      })
+      .catch((error) => {
+        console.log(error);
+        res.send('An error occured');
+      });
+  },
+
+  // Route used for testing purposes
+  test: (req, res) => { 
+    console.log(`Serving ${req.method} request for ${req.url} (handlers/api.test)`);
+    new List()
+      .where('id', 5)
+      .count()
+      .then((count) => { 
+            console.log('RESULT: ', count);
+            const lists = { counter: count };
+            res.send('asdfsda');
           }).catch((error) => {
             console.log(error);
             res.send('An error occured');

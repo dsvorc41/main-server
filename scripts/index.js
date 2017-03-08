@@ -42,6 +42,10 @@ app.post('/deleteUser', (req, res) => {
   requestHandler.deleteUser(req, res);
 });
 
+app.post('/updateUserPassword', (req, res) => {
+  requestHandler.updateUserPassword(req, res);
+});
+
 app.get('/checkUserCredentials', (req, res) => {
   requestHandler.checkUserCredentials(req, res);
 });
@@ -62,9 +66,14 @@ app.post('/compareImage', (req, res) => {
   requestHandler.compareImage(req, res);
 });
 
+
 ////////////////////////////////////////////////
-//////// DATA ROUTES ////////////////////////
+//////// API GET ROUTES ////////////////////////
 //////////////////////////////////////////////
+
+app.get('/api/all', (req, res) => {
+  requestHandlerAPI.all(req, res);
+});
 
 app.get('/api/lists', (req, res) => {
   requestHandlerAPI.lists(req, res);
@@ -75,22 +84,42 @@ app.get('/api/lists/:userId', (req, res) => {
   requestHandlerAPI.listsUser(req, res);
 });
 
-// // GET USER LISTS
-// app.get('/api/lists2/:firebase_id', (req, res) => {
-//   requestHandlerAPI.listsUser2(req, res);
-// });
+app.get('/api/items', (req, res) => {
+  requestHandlerAPI.items(req, res);
+});
+
+app.get('/api/lists/stats/:list_id', (req, res) => {
+  requestHandlerAPI.listStats(req, res);
+});
+
+app.get('/api/users/stats/:user_id', (req, res) => {
+  requestHandlerAPI.userStats(req, res);
+});
+
+app.get('/api/test', (req, res) => {
+  requestHandlerAPI.test(req, res);
+});
+
+app.get('/api/create', (req, res) => {
+  requestHandlerSETUP.create(req, res);
+});
+
+app.get('/api/*', (req, res) => {
+  requestHandlerAPI.default(req, res);
+});
+
+////////////////////////////////////////////////
+//////// API POST ROUTES ////////////////////////
+//////////////////////////////////////////////
 
 // CREATE LIST REFACTOR
 app.post('/api/lists', (req, res) => {
   requestHandlerAPI.listsCreate(req, res);
 });
 
-app.delete('/api/lists/:list_id', (req, res) => {
-  requestHandlerAPI.listsDelete(req, res);
-});
-
-app.get('/api/items', (req, res) => {
-  requestHandlerAPI.items(req, res);
+// SUBSCRIBE USER TO LIST
+app.post('/api/lists/subscribe', (req, res) => {
+  requestHandlerAPI.subscribeUserToList(req, res);
 });
 
 app.post('/api/items', (req, res) => {
@@ -101,25 +130,25 @@ app.post('/api/items/found', (req, res) => {
   requestHandlerAPI.itemsFound(req, res);
 });
 
+////////////////////////////////////////////////
+//////// API DELETE ROUTES ////////////////////////
+//////////////////////////////////////////////
+
+// UNSUBSCRIBE USER FROM LIST
+app.delete('/api/lists/subscribe/:user_id/:list_id', (req, res) => {
+  requestHandlerAPI.unSubscribeUserFromList(req, res);
+});
+
+// DELETE LIST (REASSIGN USER_ID)
+app.delete('/api/lists/:list_id', (req, res) => {
+  requestHandlerAPI.listsDelete(req, res);
+});
+
+// DELETE ITEM FROM LIST
 app.delete('/api/items/:item_id/:list_id', (req, res) => {
   requestHandlerAPI.itemsDelete(req, res);
 });
 
-app.get('/api/all', (req, res) => {
-  requestHandlerAPI.all(req, res);
-});
-
-app.get('/api/create', (req, res) => {
-  requestHandlerSETUP.create(req, res);
-});
-
-app.get('/api/delete', (req, res) => {
-  requestHandlerSETUP.delete(req, res);
-});
-
-app.get('/api/*', (req, res) => {
-  requestHandlerAPI.default(req, res);
-});
 
 ////////////////////////////////////////////////
 //////// CONFIG & LISTEN! ////////////////////////

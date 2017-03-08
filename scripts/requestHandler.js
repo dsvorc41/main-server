@@ -5,17 +5,11 @@ const firebase = require('./firebaseConfig');
 const headers = require('./headers');
 const requestHandlerAPI = require('./handlers/api');
 
-AWS.config.loadFromPath('../awsConfig.json');
+AWS.config = require('../awsConfig.json');
 //import { headers, firebase } from './config';
 
 const imageServerUrl = 'http://54.202.3.62:8084';
 // const imageServerUrl = 'http://localhost:8084';
-
-// const vision = gcloud.vision({
-//   projectId: 'thesis-de1f8',
-//   keyFilename: '../../keys/Thesis-b9fb73d56c41.json'
-// });
-// const s3 = new AWS.S3();
 
 const sendResponse = function (res, statusCode, headersSent, responseMessage) {
   //console.log(responseMessage);
@@ -99,6 +93,28 @@ module.exports = {
       }
   },
 
+  updateUserPassword: (req, res) => {
+    console.log(`Serving ${req.method} request for ${req.url} (inside requestHandler.updateUserPassword)`);
+    const { newPassword1 } = req.body;
+    console.log(newPassword1);
+    const user = firebase.auth().currentUser;
+
+    if (user) {
+      user.updatePassword(newPassword1)
+        .then((success) => {
+          console.log('success password update: ', success);
+          sendResponse(res, 201, '', 'Password Updated!');
+        })
+        .catch((error) => {
+          console.log('error deleteUser: ', error);
+          sendResponse(res, 401, '', 'User not logged in, or doesn\'t exist!');
+        });
+      } else {
+        console.log('user not even logged in');
+        sendResponse(res, 401, '', 'User not logged in, or doesn\'t exist!');
+      }
+  },
+
   postImage: (req, res) => {
     //http://localhost:8084/imageMockRoute
     console.log(`Serving ${req.method} request for ${req.url} (inside requestHandler.postImage)`);
@@ -141,7 +157,7 @@ module.exports = {
         }
       })
       .then((response) => {
-        console.log(response)
+        console.log('Profile Pic Changed', response.data);
         sendResponse(res, 201, headers, response.data);
       })
       .catch((error) => {
