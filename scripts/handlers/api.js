@@ -327,24 +327,36 @@ module.exports = {
 
     const itemId = req.params.item_id;
     const listId = req.params.list_id;
+    const userId = req.params.user_id;
 
-    new Item({ id: itemId })
+    new Complete()
+      .where('item_id', itemId)
       .destroy()
+      .then(() => {
+        console.log('Completes for item deleted');
+      })
+      .then(() => {
+        return new Item({ id: itemId })
+          .destroy();
+      })
       .then(() => {
             console.log('Item Deleted:', itemId);
 
             new List({ id: listId })
-              .fetch({ withRelated: ['items'] })
+              .fetch({ withRelated: ['items', {
+                'items.complete': function (qb) { 
+                  qb.innerJoin('users', 'users_items.user_id', 'users.id');
+                  qb.where('users.id', userId); 
+                }
+                }] })
               .then((list) => { 
+                console.log('RETURNING JSON');
                 res.send(list.toJSON());
               }).catch((error) => {
                 console.log(error);
                 res.send('An error occured');
               });
-          }).catch((error) => {
-            console.log(error);
-            res.send('An error occured');
-          })
+      })
       .catch((error) => {
             console.log(error);
             res.send('An error occured');

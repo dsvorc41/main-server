@@ -145,7 +145,7 @@ app.delete('/api/lists/:list_id', (req, res) => {
 });
 
 // DELETE ITEM FROM LIST
-app.delete('/api/items/:item_id/:list_id', (req, res) => {
+app.delete('/api/items/:item_id/:list_id/:user_id', (req, res) => {
   requestHandlerAPI.itemsDelete(req, res);
 });
 
